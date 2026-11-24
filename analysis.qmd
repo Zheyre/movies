@@ -10,5 +10,25 @@ execute:
 library(tidyverse)
 
 movies <- read_csv("data/movies.csv")
-movies
+```
+
+```{r}
+#| cache: true
+movies_clean <- movies |>
+  separate_longer_delim(genre, delim = ", ")
+```
+
+```{r}
+movies |>
+  ggplot(aes(x = tomatoMeter)) +
+  geom_histogram(binwidth = 5, boundary = 0,
+                 fill = "firebrick", color = "white") +
+  labs(
+    title = "How critics score films on Rotten Tomatoes",
+    subtitle = paste(format(nrow(movies), big.mark = ","), "films"),
+    x = "Tomatometer Score",
+    y = "Count",
+    caption = "Source: Rotten Tomatoes"
+  ) +
+  theme_minimal()
 ```
