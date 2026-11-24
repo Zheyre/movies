@@ -32,3 +32,76 @@ movies |>
   ) +
   theme_minimal()
 ```
+
+```{r}
+movies_gap <- movies_clean |>
+  filter(tomatoMeter != 0, audienceScore != 0) |>
+  mutate(gap = tomatoMeter - audienceScore)
+
+movies_summary <- movies_gap |>
+  summarize(mean_gap = mean(gap), n = n(), .by = genre) |>
+  filter(n >= 100) |>
+  arrange(mean_gap)
+
+movies_summary
+```
+
+```{r}
+movies_summary |>
+  ggplot(aes(x = mean_gap,
+             y = fct_reorder(genre, mean_gap, .desc = TRUE),
+             fill = mean_gap > 0)) +
+  geom_col() +
+  geom_vline(xintercept = 0, linewidth = 0.8) +
+  scale_fill_manual(values = c("TRUE" = "firebrick", "FALSE" = "steelblue"),
+                    labels = c("TRUE" = "Critics rate higher",
+                               "FALSE" = "Audiences rate higher")) +
+  labs(
+    title = "Critics and audiences disagree most about documentaries and horror",
+    subtitle = "Average Tomatometer minus audience score by genre (genres with 100+ rows, zero scores removed)",
+    x = "Average gap (critic score minus audience score)",
+    y = NULL,
+    fill = NULL,
+    caption = "Source: Rotten Tomatoes"
+  ) +
+  theme_minimal() +
+  theme(legend.position = "top")
+```
+
+```{r}
+spiderman_titles <- c(
+  "Spider-Man", "Spider-Man 2", "Spider-Man 3",
+  "The Amazing Spider-Man", "The Amazing Spider-Man 2",
+  "Spider-Man: Homecoming", "Spider-Man: Far From Home",
+  "Spider-Man: No Way Home"
+)
+
+spiderman <- movies |>
+  filter(title %in% spiderman_titles) |>
+  mutate(actor = case_when(
+    str_detect(title, "Amazing") ~ "Andrew Garfield",
+    str_detect(title, ":") ~ "Tom Holland",
+    .default = "Tobey Maguire"
+  )) |>
+  arrange(releaseDateTheaters)
+
+spiderman |>
+  pivot_longer(c(tomatoMeter, audienceScore), names_to = "source", values_to = "score") |>
+  mutate(source = if_else(source == "tomatoMeter", "Critics (Tomatometer)", "Audiences")) |>
+  ggplot(aes(x = fct_inorder(title), y = score, color = source, group = source)) +
+  geom_line(linewidth = 1.2) +
+  geom_point(size = 3) +
+  scale_x_discrete(labels = \(x) str_wrap(x, 12)) +
+  scale_color_manual(values = c("Critics (Tomatometer)" = "firebrick", "Audiences" = "steelblue")) +
+  labs(
+    title = "Critics liked early Spider-Man more than fans did, but they agree on Tom Holland's",
+    subtitle = "Rotten Tomatoes scores for the eight live-action Spider-Man films, in release order",
+    x = NULL,
+    y = "Score (out of 100)",
+    color = NULL,
+    caption = "Source: Rotten Tomatoes"
+  ) +
+  theme_minimal() +
+  theme(legend.position = "top")
+
+```
